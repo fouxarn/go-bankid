@@ -44,10 +44,17 @@ type SOAPBody struct {
 type SOAPFault struct {
 	XMLName xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ Fault"`
 
-	Code   string `xml:"faultcode,omitempty"`
-	String string `xml:"faultstring,omitempty"`
-	Actor  string `xml:"faultactor,omitempty"`
-	Detail string `xml:"detail,omitempty"`
+	Code   string     `xml:"faultcode,omitempty"`
+	String string     `xml:"faultstring,omitempty"`
+	Actor  string     `xml:"faultactor,omitempty"`
+	Detail SOAPDetail `xml:",omitempty"`
+}
+
+type SOAPDetail struct {
+	XMLName xml.Name `xml:"detail"`
+
+	FaultStatus string `xml:"faultStatus"`
+	Description string `xml:"detailedDescription"`
 }
 
 const (
@@ -101,6 +108,7 @@ type SOAPClient struct {
 	url     string
 	tls     bool
 	auth    *BasicAuth
+	cert    tls.Certificate
 	headers []interface{}
 }
 
@@ -197,11 +205,12 @@ func (f *SOAPFault) Error() string {
 	return f.String
 }
 
-func NewSOAPClient(url string, tls bool, auth *BasicAuth) *SOAPClient {
+func NewSOAPClient(url string, tls bool, auth *BasicAuth, cert tls.Certificate) *SOAPClient {
 	return &SOAPClient{
 		url:  url,
 		tls:  tls,
 		auth: auth,
+		cert: cert,
 	}
 }
 
@@ -251,6 +260,7 @@ func (s *SOAPClient) Call(soapAction string, request, response interface{}) erro
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: s.tls,
+			Certificates:       []tls.Certificate{s.cert},
 		},
 		Dial: dialTimeout,
 	}
