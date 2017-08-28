@@ -2,11 +2,9 @@ package soap
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/xml"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"time"
@@ -55,100 +53,6 @@ type SOAPDetail struct {
 
 	FaultStatus string `xml:"faultStatus"`
 	Description string `xml:"detailedDescription"`
-}
-
-const (
-	// Predefined WSS namespaces to be used in
-	WssNsWSSE string = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
-	WssNsWSU  string = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
-	WssNsType string = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"
-)
-
-type WSSSecurityHeader struct {
-	XMLName   xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ wsse:Security"`
-	XmlNSWsse string   `xml:"xmlns:wsse,attr"`
-
-	MustUnderstand string `xml:"mustUnderstand,attr,omitempty"`
-
-	Token *WSSUsernameToken `xml:",omitempty"`
-}
-
-type WSSUsernameToken struct {
-	XMLName   xml.Name `xml:"wsse:UsernameToken"`
-	XmlNSWsu  string   `xml:"xmlns:wsu,attr"`
-	XmlNSWsse string   `xml:"xmlns:wsse,attr"`
-
-	Id string `xml:"wsu:Id,attr,omitempty"`
-
-	Username *WSSUsername `xml:",omitempty"`
-	Password *WSSPassword `xml:",omitempty"`
-}
-
-type WSSUsername struct {
-	XMLName   xml.Name `xml:"wsse:Username"`
-	XmlNSWsse string   `xml:"xmlns:wsse,attr"`
-
-	Data string `xml:",chardata"`
-}
-
-type WSSPassword struct {
-	XMLName   xml.Name `xml:"wsse:Password"`
-	XmlNSWsse string   `xml:"xmlns:wsse,attr"`
-	XmlNSType string   `xml:"Type,attr"`
-
-	Data string `xml:",chardata"`
-}
-
-type BasicAuth struct {
-	Login    string
-	Password string
-}
-
-type SOAPClient struct {
-	url     string
-	tls     bool
-	auth    *BasicAuth
-	cert    tls.Certificate
-	headers []interface{}
-}
-
-// **********
-// Accepted solution from http://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang
-// Author: Icza - http://stackoverflow.com/users/1705598/icza
-
-const (
-	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
-)
-
-func randStringBytesMaskImprSrc(n int) string {
-	src := rand.NewSource(time.Now().UnixNano())
-	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = src.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-	return string(b)
-}
-
-// **********
-
-func NewWSSSecurityHeader(user, pass, mustUnderstand string) *WSSSecurityHeader {
-	hdr := &WSSSecurityHeader{XmlNSWsse: WssNsWSSE, MustUnderstand: mustUnderstand}
-	hdr.Token = &WSSUsernameToken{XmlNSWsu: WssNsWSU, XmlNSWsse: WssNsWSSE, Id: "UsernameToken-" + randStringBytesMaskImprSrc(9)}
-	hdr.Token.Username = &WSSUsername{XmlNSWsse: WssNsWSSE, Data: user}
-	hdr.Token.Password = &WSSPassword{XmlNSWsse: WssNsWSSE, XmlNSType: WssNsType, Data: pass}
-	return hdr
 }
 
 func (b *SOAPBody) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -205,27 +109,8 @@ func (f *SOAPFault) Error() string {
 	return f.String
 }
 
-func NewSOAPClient(url string, tls bool, auth *BasicAuth, cert tls.Certificate) *SOAPClient {
-	return &SOAPClient{
-		url:  url,
-		tls:  tls,
-		auth: auth,
-		cert: cert,
-	}
-}
-
-func (s *SOAPClient) AddHeader(header interface{}) {
-	s.headers = append(s.headers, header)
-}
-
-func (s *SOAPClient) Call(soapAction string, request, response interface{}) error {
+func (s *Client) Call(soapAction string, request, response interface{}) error {
 	envelope := SOAPEnvelope{}
-
-	if s.headers != nil && len(s.headers) > 0 {
-		soapHeader := &SOAPHeader{Items: make([]interface{}, len(s.headers))}
-		copy(soapHeader.Items, s.headers)
-		envelope.Header = soapHeader
-	}
 
 	envelope.Body.Content = request
 	buffer := new(bytes.Buffer)
@@ -243,12 +128,9 @@ func (s *SOAPClient) Call(soapAction string, request, response interface{}) erro
 
 	log.Println(buffer.String())
 
-	req, err := http.NewRequest("POST", s.url, buffer)
+	req, err := http.NewRequest("POST", s.URL, buffer)
 	if err != nil {
 		return err
-	}
-	if s.auth != nil {
-		req.SetBasicAuth(s.auth.Login, s.auth.Password)
 	}
 
 	req.Header.Add("Content-Type", "text/xml; charset=\"utf-8\"")
@@ -258,10 +140,6 @@ func (s *SOAPClient) Call(soapAction string, request, response interface{}) erro
 	req.Close = true
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: s.tls,
-			Certificates:       []tls.Certificate{s.cert},
-		},
 		Dial: dialTimeout,
 	}
 

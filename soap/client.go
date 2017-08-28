@@ -3,6 +3,7 @@ package soap
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -44,6 +45,23 @@ type Client struct {
 	ContentType string              // Optional Content-Type (default text/xml)
 	Config      *http.Client        // Optional HTTP client
 	Pre         func(*http.Request) // Optional hook to modify outbound requests
+}
+
+func NewClient(url string, cert tls.Certificate) *Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+			Certificates:       []tls.Certificate{cert},
+		},
+	}
+
+	config := &http.Client{Transport: tr}
+
+	return &Client{
+		URL:       url,
+		Namespace: "http://bankid.com/RpService/v4.0.0/types/",
+		Config:    config,
+	}
 }
 
 func doRoundTrip(c *Client, setHeaders func(*http.Request), in, out Message) error {
