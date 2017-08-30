@@ -49,9 +49,9 @@ func (c *Client) Authenticate(ssn string, u *EndUserInfo) (*authResponse, error)
 	}
 
 	resp, ok := respEnvelope.Body.Content.(*authResponse)
-	if ok {
-		log.Printf("AutostartToken: %v\n OrderRef: %v\n", resp.AutoStartToken, resp.OrderRef)
-		return resp, nil
+	if !ok {
+		return nil, errors.New("authResp not ok")
 	}
-	return nil, errors.New("authResp not ok")
+	log.Printf("AutostartToken: %v\n OrderRef: %v\n", resp.AutoStartToken, resp.OrderRef)
+	return resp, nil
 }

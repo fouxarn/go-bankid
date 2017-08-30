@@ -54,8 +54,9 @@ func (c *Client) Collect(ref string) (*collectResponse, error) {
 	}
 
 	collResp, ok := respEnvelope.Body.Content.(*collectResponse)
-	if ok {
-		return collResp, nil
+	if !ok {
+		err = fmt.Errorf("errorcode: %v \n string: %v \n faultStatus: %v \n detailed: %v", respEnvelope.Body.Fault.String, respEnvelope.Body.Fault.Code, respEnvelope.Body.Fault.Detail.FaultStatus, respEnvelope.Body.Fault.Detail.Description)
+		return nil, err
 	}
-	return nil, fmt.Errorf("errorcode: %v \n string: %v \n faultStatus: %v \n detailed: %v", respEnvelope.Body.Fault.String, respEnvelope.Body.Fault.Code, respEnvelope.Body.Fault.Detail.FaultStatus, respEnvelope.Body.Fault.Detail.Description)
+	return collResp, nil
 }
