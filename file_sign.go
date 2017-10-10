@@ -1,6 +1,9 @@
-package soap
+package bankid
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"errors"
+)
 
 type fileSignRequest struct {
 	XMLName xml.Name `xml:"typ:FileSignRequest"`
@@ -18,5 +21,5 @@ type fileSignRequest struct {
 }
 
 func (c *Client) FileSign() (string, error) {
-	return "", nil
+	return "", errors.New("Not implemented")
 }

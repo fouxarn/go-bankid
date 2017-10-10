@@ -1,5 +1,4 @@
-// Package soap provides a SOAP HTTP client.
-package soap
+package bankid
 
 import (
 	"bytes"
@@ -7,7 +6,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"reflect"
 )
@@ -47,6 +45,7 @@ type Client struct {
 	Pre         func(*http.Request) // Optional hook to modify outbound requests
 }
 
+// NewClient creates a new bankid-client with specified URL and certificates to access bankid-api
 func NewClient(url string, cert tls.Certificate) *Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -91,7 +90,7 @@ func doRoundTrip(c *Client, setHeaders func(*http.Request), in, out Message) err
 	if err != nil {
 		return err
 	}
-	log.Println(b.String())
+	// log.Println("Sent: " + b.String())
 	setHeaders(r)
 	if c.Pre != nil {
 		c.Pre(r)
@@ -109,7 +108,7 @@ func doRoundTrip(c *Client, setHeaders func(*http.Request), in, out Message) err
 			return fmt.Errorf("%q: %q", resp.Status, body)
 		}*/
 	body, _ := ioutil.ReadAll(resp.Body)
-	log.Println(string(body))
+	// log.Println("Received: " + string(body))
 	readerBody := bytes.NewReader(body)
 	//return xml.NewDecoder(resp.Body).Decode(out)
 	return xml.NewDecoder(readerBody).Decode(out)

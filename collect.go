@@ -1,4 +1,4 @@
-package soap
+package bankid
 
 import (
 	"encoding/xml"
@@ -14,11 +14,12 @@ type collectResponse struct {
 	XMLName   xml.Name       `xml:"CollectResponse"`
 	Status    progressStatus `xml:"progressStatus"`
 	Signature string         `xml:"signature"`
-	UserInfo  userInfo       `xml:"userInfo"`
+	UserInfo  UserInfo       `xml:"userInfo"`
 }
 
 type progressStatus string
 
+// Different statuses received from bankid-api
 const (
 	StatusOutstandingTransaction progressStatus = "OUTSTANDING_TRANSACTION"
 	StatusNoClient               progressStatus = "NO_CLIENT"
@@ -28,7 +29,7 @@ const (
 	StatusComplete               progressStatus = "COMPLETE"
 )
 
-type userInfo struct {
+type UserInfo struct {
 	GivenName      string `xml:"givenName"`
 	Surname        string `xml:"surname"`
 	Name           string `xml:"name"`

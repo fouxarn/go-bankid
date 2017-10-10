@@ -1,4 +1,4 @@
-package soap
+package bankid
 
 import (
 	"bytes"

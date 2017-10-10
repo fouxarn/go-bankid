@@ -1,4 +1,0 @@
-package: gobankid
-import:
-- package: github.com/gin-gonic/gin
-  version: ^1.2.0
