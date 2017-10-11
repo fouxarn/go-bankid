@@ -30,7 +30,7 @@ func main() {
     UserInfoType: "IP_ADDR",
     Value:        "192.168.0.1",
   }
-  authResp, _ := s.Authenticate("1901010593", u)
+  authResp, _ := s.Authenticate("190101010593", u)
   
   reader := bufio.NewScanner(os.Stdin)
   fmt.Println("Please open your bankid-app and verify authentication request")
