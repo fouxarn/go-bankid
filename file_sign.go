@@ -20,6 +20,7 @@ type fileSignRequest struct {
 	Alternatives []interface{} `xml:",omitempty"`
 }
 
+// FileSign is a method to call the FileSign resource on the BankID API.
 func (c *Client) FileSign() (string, error) {
 	return "", errors.New("Not implemented")
 }

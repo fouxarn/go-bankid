@@ -17,21 +17,24 @@ type authenticateRequest struct {
 	Alternatives []interface{} `xml:",omitempty"`
 }
 
+// EndUserInfo is information about the enduser that will be sent to bankid-api
 type EndUserInfo struct {
 	XMLName      xml.Name `xml:"endUserInfo"`
 	UserInfoType string   `xml:"type"`
 	Value        string   `xml:"value"`
 }
 
-type authResponse struct {
+// AuthResponse is the response from a bankid auth-request
+type AuthResponse struct {
 	XMLName        xml.Name `xml:"AuthResponse"`
 	OrderRef       string   `xml:"orderRef"`
 	AutoStartToken string   `xml:"autoStartToken"`
 }
 
-func (c *Client) Authenticate(ssn string, u *EndUserInfo) (*authResponse, error) {
-	respEnvelope := new(SOAPEnvelope)
-	respEnvelope.Body = SOAPBody{Content: &authResponse{}}
+// Authenticate is a method to call the Authenticate resource on the BankID API.
+func (c *Client) Authenticate(ssn string, u *EndUserInfo) (*AuthResponse, error) {
+	respEnvelope := new(soapEnvelope)
+	respEnvelope.Body = soapBody{Content: &AuthResponse{}}
 
 	a := &authenticateRequest{
 		Ssn:      ssn,
@@ -48,7 +51,7 @@ func (c *Client) Authenticate(ssn string, u *EndUserInfo) (*authResponse, error)
 		return nil, err
 	}
 
-	resp, ok := respEnvelope.Body.Content.(*authResponse)
+	resp, ok := respEnvelope.Body.Content.(*AuthResponse)
 	if !ok {
 		return nil, errors.New("authResp not ok")
 	}

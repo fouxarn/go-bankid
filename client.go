@@ -63,6 +63,16 @@ func NewClient(url string, cert tls.Certificate) *Client {
 	}
 }
 
+// NewTestClient creates a new bankid-client with test config and test certificates
+func NewTestClient() (*Client, error) {
+	cert, err := tls.X509KeyPair(testCert, testKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewClient("https://appapi.test.bankid.com/rp/v4?wsdl", cert), nil
+}
+
 func doRoundTrip(c *Client, setHeaders func(*http.Request), in, out Message) error {
 	req := &Envelope{
 		EnvelopeAttr: c.Envelope,
@@ -129,6 +139,7 @@ func (c *Client) RoundTrip(in, out Message) error {
 	return doRoundTrip(c, headerFunc, in, out)
 }
 
+// RoundTripSoap12 implements the RoundTripper interface with SOAP1.2 Content-Type action extension
 func (c *Client) RoundTripSoap12(action string, in, out Message) error {
 	headerFunc := func(r *http.Request) {
 		r.Header.Add("Content-Type", fmt.Sprintf("application/soap+xml; charset=utf-8; action=\"%s\"", action))

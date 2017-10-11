@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-type SignRequest struct {
+type signRequest struct {
 	XMLName xml.Name `xml:"typ:SignRequest"`
 	//<!--Optional:-->
 	Ssn         string `xml:"personalNumber"`
@@ -18,6 +18,7 @@ type SignRequest struct {
 	Alternatives []interface{} `xml:",omitempty"`
 }
 
+// Sign is a method to call the Sign resource on the BankID API.
 func (c *Client) Sign() (string, error) {
 	return "", errors.New("Not implemented")
 }
